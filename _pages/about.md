@@ -6,7 +6,7 @@ subtitle: PKU & BIGAI, Beijing, China
 
 profile:
   align: right
-  image: prof_pic.jpg
+  image: luolirui.jpg
   image_circular: false # crops the image to make it circular
   more_info:  
 
