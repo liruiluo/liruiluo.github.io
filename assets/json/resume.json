@@ -112,7 +112,6 @@
     }
   ],
   "publications": [
-
     {
       "name": "End-to-End Neuro-Symbolic Reinforcement Learning with Textual Explanations",
       "publisher": "ICML2024",

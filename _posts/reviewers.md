@@ -6,4 +6,3 @@ tags: formatting code
 categories: sample-posts
 tabs: false
 ---
-
