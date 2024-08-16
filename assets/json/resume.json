@@ -114,8 +114,8 @@
   "publications": [
 
     {
-      "name": "INSIGHT: End-to-End Neuro-Symbolic Visual Reinforcement Learning with Language Explanations",
-      "publisher": "ICML2 024",
+      "name": "End-to-End Neuro-Symbolic Reinforcement Learning with Textual Explanations",
+      "publisher": "ICML2024",
       "releaseDate": "1905-03-18",
       "url": "https://de.wikisource.org/wiki/Über_einen_die_Erzeugung_und_Verwandlung_des_Lichtes_betreffenden_heuristischen_Gesichtspunkt",
       "summary": "In the second paper, he applied the quantum theory to light to explain the photoelectric effect. In particular, he used the idea of light quanta (photons) to explain experimental results, but stressed the importance of the experimental results. The importance of his work on the photoelectric effect earned him the Nobel Prize in Physics in 1921."
