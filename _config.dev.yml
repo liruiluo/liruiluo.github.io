@@ -1,0 +1,12 @@
+# Development-only overrides (keeps local preview fast and deterministic)
+
+# Avoid network calls during build/serve.
+external_sources: []
+
+# Avoid warning noise unless you add a paginated index page.
+pagination:
+  enabled: false
+
+# WebP generation is great for production, but slows down the first local build a lot.
+imagemagick:
+  enabled: false

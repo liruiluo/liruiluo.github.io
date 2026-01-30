@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+force_build=0
+if [[ "${1:-}" == "--build" ]]; then
+  force_build=1
+  shift
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  if docker compose version >/dev/null 2>&1; then
+    echo "Starting Jekyll via Docker Compose..."
+    echo "Open http://localhost:8080"
+    if [[ "$force_build" -eq 1 ]]; then
+      exec docker compose up --build
+    fi
+    exec docker compose up
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    echo "Starting Jekyll via docker-compose..."
+    echo "Open http://localhost:8080"
+    if [[ "$force_build" -eq 1 ]]; then
+      exec docker-compose up --build
+    fi
+    exec docker-compose up
+  fi
+
+  image_name="liruiluo-site-dev"
+  echo "Building Docker image ($image_name)..."
+  if [[ "$force_build" -eq 1 ]]; then
+    docker build --no-cache -t "$image_name" .
+  else
+    docker build -t "$image_name" .
+  fi
+
+  echo "Starting Jekyll via docker run..."
+  echo "Open http://localhost:8080"
+  exec docker run --rm -it -p 8080:8080 -p 35729:35729 -v "$PWD":/srv/jekyll -e JEKYLL_ENV=development "$image_name"
+fi
+
+echo "Docker not found. Falling back to local Ruby/Bundler..."
+echo "Open http://localhost:8080"
+config_files="_config.yml"
+if [[ -f _config.dev.yml ]]; then
+  config_files="_config.yml,_config.dev.yml"
+fi
+bundle exec jekyll serve --config "$config_files" --watch --port=8080 --host=0.0.0.0 --livereload --trace --force_polling
