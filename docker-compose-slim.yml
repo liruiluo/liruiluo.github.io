@@ -9,5 +9,6 @@ services:
       - 35729:35729
     volumes:
       - .:/srv/jekyll
+    user: "${PUID:-1000}:${PGID:-1000}"
     environment:
       - JEKYLL_ENV=development

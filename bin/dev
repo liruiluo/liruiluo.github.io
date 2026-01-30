@@ -13,18 +13,18 @@ if command -v docker >/dev/null 2>&1; then
     echo "Starting Jekyll via Docker Compose..."
     echo "Open http://localhost:8080"
     if [[ "$force_build" -eq 1 ]]; then
-      exec docker compose up --build
+      exec PUID="$(id -u)" PGID="$(id -g)" docker compose up --build
     fi
-    exec docker compose up
+    exec PUID="$(id -u)" PGID="$(id -g)" docker compose up
   fi
 
   if command -v docker-compose >/dev/null 2>&1; then
     echo "Starting Jekyll via docker-compose..."
     echo "Open http://localhost:8080"
     if [[ "$force_build" -eq 1 ]]; then
-      exec docker-compose up --build
+      exec PUID="$(id -u)" PGID="$(id -g)" docker-compose up --build
     fi
-    exec docker-compose up
+    exec PUID="$(id -u)" PGID="$(id -g)" docker-compose up
   fi
 
   image_name="liruiluo-site-dev"
@@ -37,7 +37,7 @@ if command -v docker >/dev/null 2>&1; then
 
   echo "Starting Jekyll via docker run..."
   echo "Open http://localhost:8080"
-  exec docker run --rm -it -p 8080:8080 -p 35729:35729 -v "$PWD":/srv/jekyll -e JEKYLL_ENV=development "$image_name"
+  exec docker run --rm -it --user "$(id -u)":"$(id -g)" -e HOME=/tmp -p 8080:8080 -p 35729:35729 -v "$PWD":/srv/jekyll -e JEKYLL_ENV=development "$image_name"
 fi
 
 echo "Docker not found. Falling back to local Ruby/Bundler..."

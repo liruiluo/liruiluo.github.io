@@ -10,6 +10,7 @@
 
 - 如果你装了 Docker：会优先使用 `docker compose up` / `docker-compose up`；如果都没有，会自动 `docker build` + `docker run`（端口 `8080`），浏览器打开 `http://localhost:8080`。
 - 如果没装 Docker：会退回到本机 `bundle exec jekyll serve ...`（同样 `8080`）。
+- Docker 方式会尽量用你当前的 UID/GID 运行，避免生成的 `_site/` 变成 root 权限；如果你之前已经生成过，可以执行 `sudo chown -R $(id -u):$(id -g) _site` 修复。
 - 为了让本地预览更快，`./bin/dev` 会自动叠加 `_config.dev.yml`（比如关闭外部 RSS 拉取、关闭 WebP 生成等）；线上部署仍以 `_config.yml` 为准。
 
 如果你修改了 `Dockerfile`/`Gemfile` 这类依赖相关文件，可以用：
