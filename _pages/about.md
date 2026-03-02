@@ -15,7 +15,7 @@ selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-I am a Ph.D. student at [Peking University (PKU)](https://www.pku.edu.cn/), advised by [Cong Fang](https://congfang-ml.github.io/). Previously, I graduated and obtained my Bachelor’s degree from BJTU in 2023.
+I am a Ph.D. student in the School of Intelligence at [Peking University (PKU)](https://www.pku.edu.cn/), majoring in Computer Science and Technology (Intelligent Science and Technology), advised by [Cong Fang](https://congfang-ml.github.io/). I received my B.E. in Communication Engineering from the School of Electronic and Information Engineering at Beijing Jiaotong University (BJTU) in 2023.
 
 I am also a long-term research intern at [Beijing Institute for General Artificial Intelligence (BIGAI)](https://www.bigai.ai/), affiliated with the Agent Learning Department and mentored by [Dr. Qing Li](https://liqing-ustc.github.io/) and [Dr. Guoxi Zhang](https://guoxizhang.com/).
 
