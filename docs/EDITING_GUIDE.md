@@ -33,6 +33,8 @@
   - 每条 BibTeX 就是一篇论文
   - `selected={true}` 会出现在首页的 “selected papers”
   - `preview={xxx.png}` 对应论文缩略图
+  - `code={https://...}` / `website={https://...}` 会生成 Code / Website 按钮
+  - 加新论文时，顺手检查相邻旧论文是否也缺 Code / Website / PDF 等资源链接
 - `/assets/img/publication_preview/`
   - 放 `preview` 引用的图片
 
