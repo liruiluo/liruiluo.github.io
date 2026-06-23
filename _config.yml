@@ -7,7 +7,7 @@ first_name: Lirui
 last_name: Luo
 email: magi.luolirui@gmail.com
 description: > # the ">" symbol means to ignore newlines until "footer_text:"
-  Personal academic homepage of Lirui Luo, a Ph.D. student at Peking University, JD.com TGT intern, and long-term research intern at BIGAI, working on continual learning, reinforcement learning, Agentic RL post-training, and agent self-improvement.
+  Personal academic homepage of Lirui Luo, a Ph.D. student at Peking University and JD.com TGT intern, working on continual learning, reinforcement learning, Agentic RL post-training, and agent self-improvement.
 footer_text: >
   Powered by <a href="https://jekyllrb.com/" target="_blank">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio">al-folio</a> theme.
   Hosted by <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.
