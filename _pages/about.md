@@ -6,7 +6,7 @@ subtitle: PKU & JD TGT, Beijing, China
 
 profile:
   align: right
-  image: prof_pic.jpg
+  image: prof_pic_20260624.jpg
   image_circular: false # crops the image to make it circular
   more_info:
 
