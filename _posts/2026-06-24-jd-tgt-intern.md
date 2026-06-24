@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Intern at JD.com TGT
+title: Intern at JD.com Tech Genius Team (TGT)
 date: 2026-06-24 00:00:00
 description: Agentic RL post-training for e-commerce agents.
 tags: experience agents reinforcement-learning
