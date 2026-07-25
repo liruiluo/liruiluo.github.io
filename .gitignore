@@ -10,3 +10,4 @@ _site
 assets/libs/
 node_modules/
 vendor
+!assets/js/vendor/

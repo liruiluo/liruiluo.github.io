@@ -1,0 +1,266 @@
+{%- comment -%}
+Infinity particle hero — full-viewport background, palette adapts to light/dark theme.
+Loads three + postprocessing from /assets/js/vendor/ via an import map.
+Falls back gracefully if the browser has no WebGL2 or JS disabled.
+{%- endcomment -%}
+
+<style>
+  /* about 页专用: 让 body 透明,∞ canvas 能露出来 */
+  body { background: transparent !important; }
+  /* 主内容浮在 canvas 上;light/dark 各自的微弱底色帮助阅读 */
+  .container[role="main"] {
+    position: relative;
+    z-index: 1;
+  }
+  html[data-theme="dark"] .post,
+  html[data-theme="dark"] footer {
+    color: rgba(220, 226, 236, 0.92);
+  }
+  /* profile 图卡加点柔和阴影,不然浮在 canvas 上会太"贴" */
+  .profile img { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35); }
+  html[data-theme="dark"] .profile img { box-shadow: 0 10px 60px rgba(0, 0, 0, 0.6); }
+
+  .infinity-hero {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    /* light 主题:纯白,不叠任何滤镜 */
+    background: #ffffff;
+    transition: background 0.35s ease;
+  }
+  html[data-theme="dark"] .infinity-hero {
+    /* dark 主题:深底 + 蓝色辐光 */
+    background:
+      radial-gradient(60% 60% at 50% 42%, rgba(46, 120, 255, 0.6) 0%, rgba(20, 60, 180, 0.35) 40%, rgba(0, 0, 0, 0) 78%),
+      linear-gradient(180deg, rgba(12, 16, 24, 1) 0%, rgba(4, 6, 12, 1) 100%);
+  }
+  /* light 下 canvas 隐藏 + 网格隐藏 */
+  .infinity-hero__canvas,
+  .infinity-hero__grid { display: none; }
+  html[data-theme="dark"] .infinity-hero__canvas { display: block; }
+  html[data-theme="dark"] .infinity-hero__grid {
+    display: block;
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(rgba(140, 170, 220, 0.10) 1px, transparent 1px) 0 0/48px 48px,
+      linear-gradient(90deg, rgba(140, 170, 220, 0.10) 1px, transparent 1px) 0 0/48px 48px;
+    mix-blend-mode: screen;
+  }
+  .infinity-hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+</style>
+
+<div class="infinity-hero" id="infinity-hero" aria-hidden="true">
+  <canvas class="infinity-hero__canvas" id="infinity-hero-canvas"></canvas>
+  <div class="infinity-hero__grid"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "{{ '/assets/js/vendor/three.module.js' | relative_url }}",
+    "postprocessing": "{{ '/assets/js/vendor/postprocessing.mjs' | relative_url }}"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { EffectComposer, RenderPass, EffectPass, BloomEffect, KernelSize } from 'postprocessing';
+
+  const canvas = document.getElementById('infinity-hero-canvas');
+  const host = document.getElementById('infinity-hero');
+
+  // Skip on very small screens or when the user prefers reduced motion.
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion || !canvas) { /* keep static gradient */ }
+  else {
+    let gl = null;
+    try { gl = canvas.getContext('webgl2') || canvas.getContext('webgl'); } catch (e) {}
+    if (!gl) { /* no WebGL — leave the gradient */ }
+    else {
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'low-power' });
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+      renderer.setClearColor(0x000000, 0);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      camera.position.set(0, 0, 11);
+      camera.lookAt(0, 0, 0);
+
+      // Detect current al-folio theme (light/dark) — palette varies.
+      const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+      function fitToHost() {
+        const r = host.getBoundingClientRect();
+        renderer.setSize(r.width, r.height, true);
+        camera.aspect = r.width / Math.max(1, r.height);
+        camera.updateProjectionMatrix();
+        composer.setSize(r.width, r.height);
+      }
+
+      // GPGPU position texture — the ∞ curve solver
+      const SIZE = 200; // 40k particles keeps mobile GPUs happy
+      const rt = new THREE.WebGLRenderTarget(SIZE, SIZE, {
+        type: THREE.FloatType,
+        minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+        depthBuffer: false, stencilBuffer: false,
+      });
+      const simScene = new THREE.Scene();
+      const simCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const simMat = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 }, uSize: { value: SIZE } },
+        vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position,1.0); }`,
+        fragmentShader: `precision highp float; varying vec2 vUv; uniform float uTime,uSize;
+          #define PI 3.14159265359
+          vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+          vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+          vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+          vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+          float snoise(vec3 v){const vec2 C=vec2(1.0/6.0,1.0/3.0);const vec4 D=vec4(0,0.5,1,2);
+            vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+            vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g;
+            vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+            vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+            i=mod289(i);
+            vec4 p=permute(permute(permute(i.z+vec4(0,i1.z,i2.z,1))+i.y+vec4(0,i1.y,i2.y,1))+i.x+vec4(0,i1.x,i2.x,1));
+            float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+            vec4 j=p-49.0*floor(p*ns.z*ns.z);
+            vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
+            vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy;
+            vec4 h=1.0-abs(x)-abs(y);
+            vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+            vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0;
+            vec4 sh=-step(h,vec4(0));
+            vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+            vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+            vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+            p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+            vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+            return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3))); }
+          vec3 snoiseVec3(vec3 x){float s=snoise(x); float s1=snoise(vec3(x.y-19.1,x.z+33.4,x.x+47.2)); float s2=snoise(vec3(x.z+74.2,x.x-124.5,x.y+99.4)); return vec3(s,s1,s2);}
+          vec3 curlNoise(vec3 p){const float e=0.1; vec3 dx=vec3(e,0,0),dy=vec3(0,e,0),dz=vec3(0,0,e);
+            vec3 p_x0=snoiseVec3(p-dx),p_x1=snoiseVec3(p+dx);
+            vec3 p_y0=snoiseVec3(p-dy),p_y1=snoiseVec3(p+dy);
+            vec3 p_z0=snoiseVec3(p-dz),p_z1=snoiseVec3(p+dz);
+            return normalize(vec3(p_y1.z-p_y0.z-p_z1.y+p_z0.y, p_z1.x-p_z0.x-p_x1.z+p_x0.z, p_x1.y-p_x0.y-p_y1.x+p_y0.x))*(1.0/(2.0*e));}
+          float rand(vec2 co){return fract(sin(dot(co,vec2(12.9898,78.233)))*43758.5453);}
+          void main(){
+            float idx=floor(vUv.x*uSize)+floor(vUv.y*uSize)*uSize;
+            float total=uSize*uSize;
+            float t=idx/total*2.0*PI + uTime*1.2;   // 主页版流速放慢
+            float sT=sin(t), cT=cos(t);
+            float scale=2.5;
+            float x=(cT/(1.0+sT*sT))*scale;
+            float y=(sT*cT/(1.0+sT*sT))*scale;
+            float z=(0.5*sT)*scale;
+            vec3 pos=vec3(x,y,z);
+            float R=0.5;
+            pos.x+=(rand(vUv+0.0)-0.5)*R;
+            pos.y+=(rand(vUv+1.0)-0.5)*R;
+            pos.z+=(rand(vUv+2.0)-0.5)*R;
+            pos+=curlNoise(pos*0.05+uTime*0.1)*0.25;
+            gl_FragColor=vec4(pos,1.0);
+          }`
+      });
+      simScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), simMat));
+
+      const geom = new THREE.BufferGeometry();
+      const positions = new Float32Array(SIZE * SIZE * 3);
+      const uv = new Float32Array(SIZE * SIZE * 2);
+      for (let i = 0; i < SIZE; i++) for (let j = 0; j < SIZE; j++) {
+        const k = i * SIZE + j;
+        uv[k * 2 + 0] = j / (SIZE - 1); uv[k * 2 + 1] = i / (SIZE - 1);
+        positions[k * 3 + 0] = j / (SIZE - 1); positions[k * 3 + 1] = i / (SIZE - 1);
+      }
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geom.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+
+      const pointsMat = new THREE.ShaderMaterial({
+        uniforms: {
+          positions: { value: null },
+          pointSize: { value: 2.6 * Math.max(1, renderer.getPixelRatio()) },
+          uColor:    { value: new THREE.Color(0xffffff) },
+          uOpacity:  { value: 1.0 },
+        },
+        transparent: true, depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexShader: `
+          uniform sampler2D positions; uniform float pointSize;
+          varying float vDistance;
+          void main(){
+            vec3 pos=texture2D(positions,position.xy).xyz;
+            vec4 mv=modelViewMatrix*vec4(pos,1.0);
+            gl_Position=projectionMatrix*mv;
+            vDistance=length(mv.xyz);
+            gl_PointSize=pointSize*3.0/vDistance;
+          }`,
+        fragmentShader: `
+          precision highp float; varying float vDistance; uniform vec3 uColor; uniform float uOpacity;
+          void main(){
+            vec2 cxy=2.0*gl_PointCoord-1.0;
+            float d=length(cxy);
+            if(d>0.85) discard;
+            float a=smoothstep(0.85,0.35,d);
+            a*=1.0-smoothstep(9.0,14.0,vDistance)*0.35;
+            gl_FragColor=vec4(uColor, a * uOpacity);
+          }`
+      });
+      scene.add(new THREE.Points(geom, pointsMat));
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const bloom = new BloomEffect({
+        intensity: 1.0,
+        luminanceThreshold: 0.2,
+        luminanceSmoothing: 0.6,
+        kernelSize: KernelSize.LARGE,
+        mipmapBlur: true,
+      });
+      composer.addPass(new EffectPass(camera, bloom));
+
+      // running flag for the rAF loop — declared early so applyPalette() can toggle it
+      let running = true;
+
+      // Palette switch — light 停渲染;dark 启用 maximeheckel 原味参数
+      function applyPalette() {
+        if (isDark()) {
+          pointsMat.uniforms.uColor.value.setHex(0xffffff);
+          pointsMat.uniforms.uOpacity.value = 1.0;
+          bloom.intensity = 1.0;
+          bloom.luminanceMaterial.threshold = 0.20;
+          running = true;
+        } else {
+          running = false;   // light 直接停 rAF
+        }
+      }
+      applyPalette();
+      const themeObs = new MutationObserver(applyPalette);
+      themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+      fitToHost();
+      window.addEventListener('resize', fitToHost);
+
+      // Pause when the hero is offscreen to save battery
+      const io = new IntersectionObserver(entries => {
+        // 只在 dark 下响应可见性;light 恒定为 stop
+        if (isDark()) running = entries[0].isIntersecting;
+      }, { threshold: 0 });
+      io.observe(host);
+
+      const clock = new THREE.Clock();
+      function tick() {
+        requestAnimationFrame(tick);
+        if (!running) return;
+        simMat.uniforms.uTime.value = clock.getElapsedTime();
+        renderer.setRenderTarget(rt);
+        renderer.render(simScene, simCam);
+        renderer.setRenderTarget(null);
+        pointsMat.uniforms.positions.value = rt.texture;
+        composer.render();
+      }
+      tick();
+    }
+  }
+</script>
