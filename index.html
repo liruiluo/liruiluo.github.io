@@ -319,7 +319,7 @@
         void main(){
           float idx=floor(vUv.x*uSize)+floor(vUv.y*uSize)*uSize;
           float total=uSize*uSize;
-          float t=idx/total*2.0*PI + uTime*1.2;   // 主页版流速放慢
+          float t=idx/total*2.0*PI + uTime*2.4;   // 快速定向环流，让 ∞ 运动更有冲劲
           float sT=sin(t), cT=cos(t);
           float scale=2.5;
           float x=(cT/(1.0+sT*sT))*scale;
@@ -330,7 +330,7 @@
           pos.x+=(rand(vUv+0.0)-0.5)*R;
           pos.y+=(rand(vUv+1.0)-0.5)*R;
           pos.z+=(rand(vUv+2.0)-0.5)*R;
-          pos+=curlNoise(pos*0.05+uTime*0.1)*0.25;
+          pos+=curlNoise(pos*0.05+uTime*0.2)*0.25;
           gl_FragColor=vec4(pos,1.0);
         }`
     });
