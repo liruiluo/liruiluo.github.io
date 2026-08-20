@@ -1,7 +1,7 @@
 // Has to be in the head tag, otherwise a flicker effect will occur.
 
 const DEFAULT_THEME_SETTING = "light";
-const THEME_DEFAULT_VERSION = "light-v1";
+const THEME_DEFAULT_VERSION = "light-v2";
 const THEME_DEFAULT_VERSION_KEY = "theme-default-version";
 
 // Toggle through light, dark, and system theme settings.
@@ -184,17 +184,14 @@ let transTheme = () => {
   }, 500);
 };
 
-// Move visitors who inherited the old system-following default to the new light default
-// once. Explicit light and dark choices remain untouched; system mode stays available.
+// Apply a new site-wide default once to every existing browser, including browsers
+// with a legacy saved theme. Choices made after this migration remain untouched.
 let migrateThemeDefault = () => {
   if (localStorage.getItem(THEME_DEFAULT_VERSION_KEY) == THEME_DEFAULT_VERSION) {
     return;
   }
 
-  const themeSetting = localStorage.getItem("theme");
-  if (themeSetting == null || themeSetting == "system") {
-    localStorage.setItem("theme", DEFAULT_THEME_SETTING);
-  }
+  localStorage.setItem("theme", DEFAULT_THEME_SETTING);
   localStorage.setItem(THEME_DEFAULT_VERSION_KEY, THEME_DEFAULT_VERSION);
 };
 
