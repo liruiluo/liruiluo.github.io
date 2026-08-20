@@ -1,5 +1,9 @@
 // Has to be in the head tag, otherwise a flicker effect will occur.
 
+const DEFAULT_THEME_SETTING = "light";
+const THEME_DEFAULT_VERSION = "light-v1";
+const THEME_DEFAULT_VERSION_KEY = "theme-default-version";
+
 // Toggle through light, dark, and system theme settings.
 let toggleThemeSetting = () => {
   let themeSetting = determineThemeSetting();
@@ -180,12 +184,26 @@ let transTheme = () => {
   }, 500);
 };
 
+// Move visitors who inherited the old system-following default to the new light default
+// once. Explicit light and dark choices remain untouched; system mode stays available.
+let migrateThemeDefault = () => {
+  if (localStorage.getItem(THEME_DEFAULT_VERSION_KEY) == THEME_DEFAULT_VERSION) {
+    return;
+  }
+
+  const themeSetting = localStorage.getItem("theme");
+  if (themeSetting == null || themeSetting == "system") {
+    localStorage.setItem("theme", DEFAULT_THEME_SETTING);
+  }
+  localStorage.setItem(THEME_DEFAULT_VERSION_KEY, THEME_DEFAULT_VERSION);
+};
+
 // Determine the expected state of the theme toggle, which can be "dark", "light", or
-// "system". Default is "system".
+// "system". Default is "light".
 let determineThemeSetting = () => {
   let themeSetting = localStorage.getItem("theme");
   if (themeSetting != "dark" && themeSetting != "light" && themeSetting != "system") {
-    themeSetting = "system";
+    themeSetting = DEFAULT_THEME_SETTING;
   }
   return themeSetting;
 };
@@ -207,6 +225,7 @@ let determineComputedTheme = () => {
 };
 
 let initTheme = () => {
+  migrateThemeDefault();
   let themeSetting = determineThemeSetting();
 
   setThemeSetting(themeSetting);
