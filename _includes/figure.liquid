@@ -1,4 +1,4 @@
-{% assign img_path = include.path | remove: '.jpg' | remove: '.jpeg' | remove: '.png' | remove: '.tiff' | remove: '.gif' %}
+{% assign img_path = include.path | remove: '.jpg' | remove: '.jpeg' | remove: '.png' | remove: '.webp' | remove: '.tiff' | remove: '.gif' %}
 
 <figure
   {% if include.slot %}
@@ -67,6 +67,12 @@
         loading="{{ include.loading }}"
       {% elsif site.lazy_loading_images %}
         loading="lazy"
+      {% endif %}
+      {% if include.decoding %}
+        decoding="{{ include.decoding }}"
+      {% endif %}
+      {% if include.fetchpriority %}
+        fetchpriority="{{ include.fetchpriority }}"
       {% endif %}
       onerror="this.onerror=null; $('.responsive-img-srcset').remove();"
     >

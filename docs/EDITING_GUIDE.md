@@ -26,17 +26,18 @@
 - `/_pages/about.md`
   - `permalink: /` 表示它就是首页
   - `subtitle:`、正文、以及 `news/selected_papers/social` 开关都在这里
+  - `profile.image` 使用网页尺寸的 WebP；不要直接引用数 MB 的相机原图
 
 ### 2) Publications（论文列表）
 
 - `/_bibliography/papers.bib`
   - 每条 BibTeX 就是一篇论文
   - `selected={true}` 会出现在首页的 “selected papers”
-  - `preview={xxx.png}` 对应论文缩略图
+  - `preview={xxx.webp}` 对应论文缩略图；缩略图按约 480 px 宽导出即可
   - `code={https://...}` / `website={https://...}` 会生成 Code / Website 按钮
   - 加新论文时，顺手检查相邻旧论文是否也缺 Code / Website / PDF 等资源链接
 - `/assets/img/publication_preview/`
-  - 放 `preview` 引用的图片
+  - 放 `preview` 引用的图片；优先 WebP，避免把论文原尺寸 PNG 直接用于首页
 
 ### 3) News（首页的 news 列表）
 
