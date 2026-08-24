@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Joined JD.com's Tech Genius Team (TGT, Top Young Technical Talent Program) as an intern, working on Agentic RL post-training for e-commerce agents.
+Joined JD.com's Tech Genius Team (TGT, Top Young Technical Talent Program) as an intern, working on Agentic RL post-training that teaches e-commerce coding agents to maintain and use memory while completing long-horizon tasks.
