@@ -61,7 +61,10 @@ permissions:
 jobs:
   deploy:
     # available images: https://github.com/actions/runner-images#available-images
-    runs-on: ubuntu-latest
+    # Pin the runner image: ruby/setup-ruby only ships prebuilt rubies for
+    # recent patch releases on newer images, and Ruby 3.2.2 is not available
+    # on ubuntu-26.04 (ubuntu-latest). Bump both together if this image is retired.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
