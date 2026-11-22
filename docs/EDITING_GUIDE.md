@@ -84,3 +84,21 @@ nav_order: 3
 1. 只把上面 5 个入口当作“你的内容区”，其他文件夹先不动。
 2. 把不需要的示例内容/大文件删掉（示例 projects、示例媒体文件、示例预览图等），站点会立刻清爽很多。
 3. 每次改动都用 `./bin/dev` 预览，确保“改哪里→立刻看到”。
+
+## 托管与发布（GitHub Pages）
+
+- 站点托管在 GitHub Pages，**仓库必须是 public**：私有仓的 Pages 需要 GitHub Pro 之类的付费 plan，订阅一失效整站会变成 GitHub 原生 404（`There isn't a GitHub Pages site here`），但 API 里 `status` 仍显示 `built`、deployment 仍是 `success`，很容易误判成“站点坏了”。
+- 发布链路：push `master` → Actions `Deploy site`（Jekyll build → 推 `gh-pages`）→ Pages 构建 → 线上生效。
+- 可选的工作流 `runs-on` 钉在 `ubuntu-24.04`：`ubuntu-latest` 已经切到 26.04，那个镜像上没有 ruby 3.2.2，会直接死在 Setup Ruby。要升 ruby 就一起升镜像。
+- 手动排查顺序：
+
+```bash
+curl -sI https://liruiluo.github.io/ | head -1          # 404 是 GitHub 原生页还是站点 404
+gh api repos/liruiluo/liruiluo.github.io/pages          # status / public
+gh api -X PUT repos/liruiluo/liruiluo.github.io/pages \
+  -f build_type=legacy -f 'source[branch]=gh-pages' -f 'source[path]=/'   # 私有仓会回 422 说明 plan 不支持
+gh api -X POST repos/liruiluo/liruiluo.github.io/pages/builds           # 强制重建
+gh workflow run "Deploy site" --ref master                              # 强制走一遍完整构建
+```
+
+- `about` 页里的 `news` / `experiences` 链接指向 `/news/`、`/blog/`，但这两个索引页从未生成（历史遗留，点进去是 404）；要么补 `_pages/blog.md`、`_pages/news.md`，要么改链接。
